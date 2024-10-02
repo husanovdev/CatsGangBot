@@ -178,6 +178,12 @@ class Tapper:
     async def get_tasks(self, http_client):
         return await self.make_request(http_client, 'GET', endpoint="/tasks/user", data={'group': 'cats'})
     
+    
+    @error_handler
+    async def check_available(self, http_client):
+        return await self.make_request(http_client, 'GET', endpoint="/exchange-claim/check-available")
+    
+    
     @error_handler
     async def done_tasks(self, http_client, task_id, type_):
         return await self.make_request(http_client, 'POST', endpoint=f"/tasks/{task_id}/{type_}", json={})
@@ -275,7 +281,11 @@ class Tapper:
                     if reward:
                         logger.info(f"{self.session_name} | Reward from Avatar quest: <y>{reward}</y>")
                     await asyncio.sleep(random.randint(5, 7))
-                
+                    
+                if await self.check_available(http_client=http_client).get('isAvailable', False):
+                    logger.info(f"{self.session_name} | Available withdrawal: <y>True</y>")
+                else:
+                    logger.info(f"{self.session_name} | Available withdrawal: <r>False</r>")
                 
                 await http_client.close()
                 if proxy_conn:
