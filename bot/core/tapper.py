@@ -317,7 +317,9 @@ class Tapper:
                         
                         youtube_answers = [
                             {'id': 141, 'answer': 'dildo'},
-                            {'id': 146, 'answer': 'dip'}
+                            {'id': 146, 'answer': 'dip'},
+                            {'id': 148, 'answer': 'airnode'},
+                            {'id': 149, 'answer': 'wei'},
                         ]
 
                         if type == 'SUBSCRIBE_TO_CHANNEL':
