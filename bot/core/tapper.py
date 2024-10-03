@@ -101,45 +101,6 @@ class Tapper:
             logger.error(f"{self.session_name} | Unknown error: {error}")
             await asyncio.sleep(delay=3)
 
-
-    @error_handler
-    async def join_and_mute_tg_channel(self, link: str):
-        await asyncio.sleep(delay=random.randint(15, 30))
-        
-        if not self.tg_client.is_connected:
-            await self.tg_client.connect()
-
-        try:
-            parsed_link = link if 'https://t.me/+' in link else link[13:]
-            
-            chat = await self.tg_client.get_chat(parsed_link)
-            
-            if chat.username:
-                chat_username = chat.username
-            elif chat.id:
-                chat_username = chat.id
-            else:
-                logger.info("Unable to get channel username or id")
-                return
-            
-            logger.info(f"{self.session_name} | Retrieved channel: <y>{chat_username}</y>")
-            try:
-                await self.tg_client.get_chat_member(chat_username, "me")
-            except Exception as error:
-                if error.ID == 'USER_NOT_PARTICIPANT':
-                    await asyncio.sleep(delay=3)
-                    chat = await self.tg_client.join_chat(parsed_link)
-                    logger.info(f"{self.session_name} | Successfully joined chat <y>{chat_username}</y>")
-                else:
-                    logger.error(f"{self.session_name} | Error while checking channel: <y>{chat_username}</y>: {str(error.ID)}")
-        except Exception as e:
-            logger.error(f"{self.session_name} | Error joining/muting channel {link}: {str(e)}")
-            await asyncio.sleep(delay=3)    
-        finally:
-            if self.tg_client.is_connected:
-                await self.tg_client.disconnect()
-            await asyncio.sleep(random.randint(10, 20))
-
     @error_handler
     async def make_request(self, http_client, method, endpoint=None, url=None, **kwargs):
         response = await http_client.request(method, url or f"https://api.catshouse.club{endpoint or ''}", **kwargs)
@@ -320,16 +281,10 @@ class Tapper:
                             {'id': 146, 'answer': 'dip'},
                             {'id': 148, 'answer': 'AIRNODE'},
                             {'id': 149, 'answer': 'WEI'},
+                            {'id': 153, 'answer': 'ABSTRACT'}
                         ]
 
-                        if type == 'SUBSCRIBE_TO_CHANNEL':
-                            channel_link = task.get('params').get('channelUrl')
-                            if channel_link:
-                                await self.join_and_mute_tg_channel(channel_link)
-                            else:
-                                logger.warning(f"{self.session_name} | No channel link provided for task {id}")
-
-                        elif type == 'YOUTUBE_WATCH':
+                        if type == 'YOUTUBE_WATCH':
                             answer = next((item['answer'] for item in youtube_answers if item['id'] == id), None)
                             if answer:
                                 type_ += f'?answer={answer}'
@@ -353,11 +308,13 @@ class Tapper:
                     if reward:
                         logger.info(f"{self.session_name} | Reward from Avatar quest: <y>{reward}</y>")
                     await asyncio.sleep(random.randint(5, 7))
-                    
-                if (await self.check_available(http_client=http_client) or {}).get('isAvailable', False):
-                    logger.info(f"{self.session_name} | Available withdrawal: <y>True</y>")
-                else:
-                    logger.info(f"{self.session_name} | Available withdrawal: <r>False</r>")
+                   
+                available_withdraw = await self.check_available(http_client=http_client)
+                if available_withdraw:
+                    if available_withdraw.get('isAvailable', False): 
+                        logger.info(f"{self.session_name} | Available withdrawal: <y>True</y>")
+                    else:
+                        logger.info(f"{self.session_name} | Available withdrawal: <r>False</r>")
                 
                 await http_client.close()
                 if proxy_conn:
