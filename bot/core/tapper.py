@@ -129,15 +129,7 @@ class Tapper:
                 if error.ID == 'USER_NOT_PARTICIPANT':
                     await asyncio.sleep(delay=3)
                     chat = await self.tg_client.join_chat(parsed_link)
-                    chat_id = chat.id
                     logger.info(f"{self.session_name} | Successfully joined chat <y>{chat_username}</y>")
-                    await asyncio.sleep(random.randint(5, 10))
-                    peer = await self.tg_client.resolve_peer(chat_id)
-                    await self.tg_client.invoke(account.UpdateNotifySettings(
-                        peer=InputNotifyPeer(peer=peer),
-                        settings=InputPeerNotifySettings(mute_until=2147483647)
-                    ))
-                    logger.info(f"{self.session_name} | Successfully muted chat <y>{chat_username}</y>")
                 else:
                     logger.error(f"{self.session_name} | Error while checking channel: <y>{chat_username}</y>: {str(error.ID)}")
         except Exception as e:
