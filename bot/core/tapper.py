@@ -282,7 +282,7 @@ class Tapper:
                         logger.info(f"{self.session_name} | Reward from Avatar quest: <y>{reward}</y>")
                     await asyncio.sleep(random.randint(5, 7))
                     
-                if await self.check_available(http_client=http_client).get('isAvailable', False):
+                if (await self.check_available(http_client=http_client)).get('isAvailable', False):
                     logger.info(f"{self.session_name} | Available withdrawal: <y>True</y>")
                 else:
                     logger.info(f"{self.session_name} | Available withdrawal: <r>False</r>")
