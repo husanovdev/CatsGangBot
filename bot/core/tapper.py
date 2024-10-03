@@ -101,6 +101,53 @@ class Tapper:
             logger.error(f"{self.session_name} | Unknown error: {error}")
             await asyncio.sleep(delay=3)
 
+
+    @error_handler
+    async def join_and_mute_tg_channel(self, link: str):
+        await asyncio.sleep(delay=random.randint(15, 30))
+        
+        if not self.tg_client.is_connected:
+            await self.tg_client.connect()
+
+        try:
+            parsed_link = link if 'https://t.me/+' in link else link[13:]
+            
+            chat = await self.tg_client.get_chat(parsed_link)
+            
+            if chat.username:
+                chat_username = chat.username
+            elif chat.id:
+                chat_username = chat.id
+            else:
+                logger.info("Unable to get channel username or id")
+                return
+            
+            logger.info(f"{self.session_name} | Retrieved channel: <y>{chat_username}</y>")
+            try:
+                await self.tg_client.get_chat_member(chat_username, "me")
+            except Exception as error:
+                if error.ID == 'USER_NOT_PARTICIPANT':
+                    await asyncio.sleep(delay=3)
+                    chat = await self.tg_client.join_chat(parsed_link)
+                    chat_id = chat.id
+                    logger.info(f"{self.session_name} | Successfully joined chat <y>{chat_username}</y>")
+                    await asyncio.sleep(random.randint(5, 10))
+                    peer = await self.tg_client.resolve_peer(chat_id)
+                    await self.tg_client.invoke(account.UpdateNotifySettings(
+                        peer=InputNotifyPeer(peer=peer),
+                        settings=InputPeerNotifySettings(mute_until=2147483647)
+                    ))
+                    logger.info(f"{self.session_name} | Successfully muted chat <y>{chat_username}</y>")
+                else:
+                    logger.error(f"{self.session_name} | Error while checking channel: <y>{chat_username}</y>: {str(error.ID)}")
+        except Exception as e:
+            logger.error(f"{self.session_name} | Error joining/muting channel {link}: {str(e)}")
+            await asyncio.sleep(delay=3)    
+        finally:
+            if self.tg_client.is_connected:
+                await self.tg_client.disconnect()
+            await asyncio.sleep(random.randint(10, 20))
+
     @error_handler
     async def make_request(self, http_client, method, endpoint=None, url=None, **kwargs):
         response = await http_client.request(method, url or f"https://api.catshouse.club{endpoint or ''}", **kwargs)
@@ -184,6 +231,8 @@ class Tapper:
         return await self.make_request(http_client, 'GET', endpoint="/exchange-claim/check-available")
     
     
+    
+    
     @error_handler
     async def done_tasks(self, http_client, task_id, type_):
         return await self.make_request(http_client, 'POST', endpoint=f"/tasks/{task_id}/{type_}", json={})
@@ -265,12 +314,41 @@ class Tapper:
                             continue
                         id = task.get('id')
                         type = task.get('type')
+                        
+                        if type in ['ACTIVITY_CHALLENGE', 'INVITE_FRIEND', 'NICKNAME_CHANGE']:
+                            continue
+                        
                         title = task.get('title')
                         reward = task.get('rewardPoints')
-                        type_=('check' if type == 'SUBSCRIBE_TO_CHANNEL' else 'complete')
+                        
+                        type_=('check' if type in ['SUBSCRIBE_TO_CHANNEL'] else 'complete')
+                        
+                        youtube_answers = [
+                            {'id': 141, 'answer': 'dildo'},
+                            {'id': 146, 'answer': 'dip'}
+                        ]
+
+                        if type == 'SUBSCRIBE_TO_CHANNEL':
+                            channel_link = task.get('params').get('channelUrl')
+                            if channel_link:
+                                await self.join_and_mute_tg_channel(channel_link)
+                            else:
+                                logger.warning(f"{self.session_name} | No channel link provided for task {id}")
+
+                        elif type == 'YOUTUBE_WATCH':
+                            answer = next((item['answer'] for item in youtube_answers if item['id'] == id), None)
+                            if answer:
+                                type_ += f'?answer={answer}'
+                                logger.info(f"{self.session_name} | Answer found for <y>'{title}'</y>: {answer}")
+                            else:
+                                logger.info(f"{self.session_name} | Skipping task {id} - No answer available")
+                                continue
+                        
                         done_task = await self.done_tasks(http_client=http_client, task_id=id, type_=type_)
                         if done_task and (done_task.get('success', False) or done_task.get('completed', False)):
                             logger.info(f"{self.session_name} | Task <y>{title}</y> done! Reward: {reward}")
+                            
+                        await asyncio.sleep(random.randint(5, 7))
                 else:
                     logger.error(f"{self.session_name} | No tasks")
                 
@@ -282,7 +360,7 @@ class Tapper:
                         logger.info(f"{self.session_name} | Reward from Avatar quest: <y>{reward}</y>")
                     await asyncio.sleep(random.randint(5, 7))
                     
-                if await self.check_available(http_client=http_client).get('isAvailable', False):
+                if (await self.check_available(http_client=http_client)).get('isAvailable', False):
                     logger.info(f"{self.session_name} | Available withdrawal: <y>True</y>")
                 else:
                     logger.info(f"{self.session_name} | Available withdrawal: <r>False</r>")
