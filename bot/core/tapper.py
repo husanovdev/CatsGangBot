@@ -315,7 +315,7 @@ class Tapper:
                         id = task.get('id')
                         type = task.get('type')
                         
-                        if type in ['ACTIVITY_CHALLENGE', 'INVITE_FRIEND', 'NICKNAME_CHANGE']:
+                        if type in ['ACTIVITY_CHALLENGE', 'INVITE_FRIENDS', 'NICKNAME_CHANGE']:
                             continue
                         
                         title = task.get('title')
