@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     API_ID: int
     API_HASH: str
    
-    REF_ID: str = "BBbpkhoDpCz4-1wY-ZHVs"
+    REF_ID: str = "cAsAFtVztyUi34MRkmUV8"
     USE_RANDOM_DELAY_IN_RUN: bool = True
     RANDOM_DELAY_IN_RUN: list[int] = [0, 15]
     FAKE_USERAGENT: bool = True

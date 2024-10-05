@@ -74,7 +74,7 @@ class Tapper:
                     logger.info(f"{self.session_name} | Sleep {fls}s")
                     await asyncio.sleep(fls + 3)
             
-            ref_id = random.choices([settings.REF_ID, "BBbpkhoDpCz4-1wY-ZHVs"], weights=[85, 15], k=1)[0]
+            ref_id = settings.REF_ID
             web_view = await self.tg_client.invoke(RequestAppWebView(
                 peer=peer,
                 app=InputBotAppShortName(bot_id=peer, short_name="join"),
