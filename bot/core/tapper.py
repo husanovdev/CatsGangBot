@@ -20,6 +20,7 @@ import functools
 from bot.utils import logger
 from bot.exceptions import InvalidSession
 from .headers import headers
+import json
 
 
 def error_handler(func: Callable):
@@ -30,6 +31,16 @@ def error_handler(func: Callable):
         except Exception as e:
             await asyncio.sleep(1)
     return wrapper
+
+def get_youtube_answer(title):
+    with open('youtube_answers.json', 'r') as file:
+        data = json.load(file)
+    
+    for item in data['youtube_answers']:
+        if item['title'].lower() == title.lower():
+            return item['answer']
+    
+    return None
 
 class Tapper:
     def __init__(self, tg_client: Client, proxy: str):
@@ -276,16 +287,8 @@ class Tapper:
                         
                         type_=('check' if type in ['SUBSCRIBE_TO_CHANNEL'] else 'complete')
                         
-                        youtube_answers = [
-                            {'id': 141, 'answer': 'dildo'},
-                            {'id': 146, 'answer': 'dip'},
-                            {'id': 148, 'answer': 'AIRNODE'},
-                            {'id': 149, 'answer': 'WEI'},
-                            {'id': 153, 'answer': 'ABSTRACT'}
-                        ]
-
                         if type == 'YOUTUBE_WATCH':
-                            answer = next((item['answer'] for item in youtube_answers if item['id'] == id), None)
+                            answer = get_youtube_answer(title)
                             if answer:
                                 type_ += f'?answer={answer}'
                                 logger.info(f"{self.session_name} | Answer found for <y>'{title}'</y>: {answer}")
